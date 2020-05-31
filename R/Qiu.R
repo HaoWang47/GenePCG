@@ -1,6 +1,72 @@
-### PCG cv & specify df
+# Dr. Qiu's method: Estimating c-level partial correlation graphs with application to brain imaging, by Yumou Qiu, XiaoHua Zhou
 
-Est_qiu_dfmax=function(df, alpha=0.05, degree_freedom=1e10, c0=0.25){
+# source code forked from github.com/yumouqiu/Estimating-c-level-partial-correlation
+
+# Data: Columns are genes/variables, rows are samples under certain conditions or different treatment conditions or time series;
+
+# functions: 
+#
+#
+#
+#
+
+
+
+cPCG_theo=function(df){
+  require(glmnet)
+  n = dim(df)[1]; p = dim(df)[2]
+  t0=2
+  IndMatrix = matrix(1, p, p) - diag(rep(1, p))
+  Eresidual = matrix(0, n, p) # regression residuals matrix n*p
+  CoefMatrix = matrix(0, p, p - 1) # regression coefficient matrix p*p-1
+  meanX = colMeans(df)
+  X = t(t(df) - meanX)
+  XS = matrix(0, n, p) # XS: Standardized X
+  for (i in 1 : p){
+    XS[, i] = X[, i] / sd(X[, i])
+  }
+  
+  colnames(X)=colnames(df)
+  colnames(XS)=colnames(df)
+  
+  shat=sqrt(n/(log(p)^3))
+  lambda=sqrt(2*(2+0.01)*log(p/shat)/n)
+  
+  for (i in 1 : p){
+    out=glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda)
+    
+    Coef=coef(out, s=lambda)[-1]
+    CoefMatrix[i,] = Coef / apply(X[, -i], 2, sd)
+    Predict = predict(out,XS[, -i]) %>% as.matrix()
+    Eresidual[,i] = X[, i] - Predict 
+  }
+  
+  CovRes = t(Eresidual) %*% Eresidual / n # residuals covariance
+  Est = matrix(1, p, p) # estimated partial correlation (rho hat in the paper )
+  
+  for (i in 1 : (p - 1)){
+    for (j in (i + 1) : p){
+      temp = Eresidual[, i] * Eresidual[, j] + Eresidual[, i]^2 * CoefMatrix[j, i] + Eresidual[, j]^2 * CoefMatrix[i, j - 1]
+      Est[i, j] = mean(temp) / sqrt(diag(CovRes)[i] * diag(CovRes)[j])
+      Est[j, i] = Est[i, j]
+    }
+  }
+  
+  # EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
+  EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
+  # EstThresh[abs(EstThresh)>1]=1 *********************************************************
+  kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
+  SE=sqrt((kappa*(1-EstThresh^2))^2/n)
+  tscore=Est/SE
+  
+  return(list(Est=Est,
+              tscore=tscore,
+              kappa=kappa,
+              EstThresh=EstThresh,
+              n=n, p=p))
+}  
+
+cPCG_cv_dfmax=function(df, degree_freedom=1e10){
   require(glmnet)
   require(doMC)
   n = dim(df)[1]; p = dim(df)[2]
@@ -10,11 +76,11 @@ Est_qiu_dfmax=function(df, alpha=0.05, degree_freedom=1e10, c0=0.25){
   CoefMatrix = matrix(0, p, p - 1) # regression coefficient matrix p*p-1
   meanX = colMeans(df)
   X = t(t(df) - meanX)
-  XS = matrix(0, n, p)
-  # XS: Standardized X
+  XS = matrix(0, n, p) # XS: Standardized X
   for (i in 1 : p){
     XS[, i] = X[, i] / sd(X[, i])
   }
+  
   colnames(X)=colnames(df)
   colnames(XS)=colnames(df)
   
@@ -35,31 +101,47 @@ Est_qiu_dfmax=function(df, alpha=0.05, degree_freedom=1e10, c0=0.25){
     Eresidual[,i] = X[, i] - Predict 
   }
   
-  # Get Est
-  {
-    CovRes = t(Eresidual) %*% Eresidual / n # residuals covariance
-    Est = matrix(1, p, p) # estimated partial correlation (rho hat in the paper )
-    
-    for (i in 1 : (p - 1)){
-      for (j in (i + 1) : p){
-        temp = Eresidual[, i] * Eresidual[, j] + Eresidual[, i]^2 * CoefMatrix[j, i] + Eresidual[, j]^2 * CoefMatrix[i, j - 1]
-        Est[i, j] = mean(temp) / sqrt(diag(CovRes)[i] * diag(CovRes)[j])
-        Est[j, i] = Est[i, j]
-        #print(paste("i=",i,",","j=",j))
-      }
+  CovRes = t(Eresidual) %*% Eresidual / n # residuals covariance
+  Est = matrix(1, p, p) # estimated partial correlation (rho hat in the paper )
+  
+  for (i in 1 : (p - 1)){
+    for (j in (i + 1) : p){
+      temp = Eresidual[, i] * Eresidual[, j] + Eresidual[, i]^2 * CoefMatrix[j, i] + Eresidual[, j]^2 * CoefMatrix[i, j - 1]
+      Est[i, j] = mean(temp) / sqrt(diag(CovRes)[i] * diag(CovRes)[j])
+      Est[j, i] = Est[i, j]
+      #print(paste("i=",i,",","j=",j))
     }
-  } # end Est
+  }
+  
+  # EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
+  EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
+  # EstThresh[abs(EstThresh)>1]=1 *********************************************************
+  kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
+  SE=sqrt((kappa*(1-EstThresh^2))^2/n)
+  tscore=Est/SE
+  
+  return(list(Est=Est,
+              tscore=tscore,
+              kappa=kappa,
+              EstThresh=EstThresh,
+              n=n, p=p))
+}  
+
+
+
+
+inference=function(list, alpha=0.05, c0=0.25){
+  Est=list$Est
+  tscore=list$tscore
+  kappa=list$kappa
+  EstThresh=list$EstThresh
+  n=list$n; p=list$p; 
+  t0=2;
+  
   
   # inference
   {
-    #EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
-    EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
     EstThresh[abs(EstThresh)>1]=1
-    kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
-    
-    SE=sqrt((kappa*(1-EstThresh^2))^2/n)
-    tscore=Est/SE
-    
     tau = seq(0, 3.5, 0.01); smax = n / 2; lentau = length(tau) 
     
     resprop = list() # selected edges with different tau's, a list of 351 elements
@@ -94,7 +176,7 @@ Est_qiu_dfmax=function(df, alpha=0.05, degree_freedom=1e10, c0=0.25){
     sigs=FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),]%>% as.data.frame()
     colnames(sigs)=c("node1","node2")
     
-    # c=0.15
+    # c=0.25
     FDPpropC0 = 2 * ( sqrt(n) * p * ( 1 - pnorm( tau * sqrt(log(p)) ) ) + p * (p - 1 - sqrt(n)) * ( 1 - pnorm( sqrt(n) * c0 / sqrt(kappa) + tau * sqrt(log(p)) ) ) ) / rejectpropC0
     
     if (sum(FDPpropC0 <= alpha) > 0) taupropC0 = min(c(2, tau[FDPpropC0 <= alpha]))
@@ -106,6 +188,18 @@ Est_qiu_dfmax=function(df, alpha=0.05, degree_freedom=1e10, c0=0.25){
     sigs0=FDPrespropC0[which(FDPrespropC0[,1]!=FDPrespropC0[,2]),]%>% as.data.frame()
     colnames(sigs0)=c("node1","node2")
   } # end Inference
-  return(list(Est=Est, tscore=tscore, Sigs=sigs, Sigs0=sigs0))
   
-}# end function 
+  return(list(sigs=sigs,sigs0=sigs0))  
+  #return(list(sigs=FDPresprop,sigs0=FDPrespropC0))  
+}
+
+
+
+
+
+
+
+
+
+
+

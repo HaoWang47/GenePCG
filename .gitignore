@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 /simu_data
+/results
 /model_evaluation
 .DS_Store
 May_25.html

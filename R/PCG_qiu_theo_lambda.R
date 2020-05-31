@@ -25,6 +25,7 @@ Est_qiu_theo_lambda=function(df, alpha=0.05, c0=0.25){
 
     Coef=coef(out, s=lambda)[-1]
     CoefMatrix[i,] = Coef / apply(X[, -i], 2, sd)
+    Predict = predict(out,XS[, -i]) %>% as.matrix()
     Eresidual[,i] = X[, i] - Predict 
   }
   
@@ -48,6 +49,9 @@ Est_qiu_theo_lambda=function(df, alpha=0.05, c0=0.25){
     EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
     EstThresh[abs(EstThresh)>1]=1
     kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
+    
+    SE=sqrt((kappa*(1-EstThresh^2))^2/n)
+    tscore=Est/SE
     
     tau = seq(0, 3.5, 0.01); smax = n / 2; lentau = length(tau) 
     
@@ -95,6 +99,6 @@ Est_qiu_theo_lambda=function(df, alpha=0.05, c0=0.25){
     sigs0=FDPrespropC0[which(FDPrespropC0[,1]!=FDPrespropC0[,2]),]%>% as.data.frame()
     colnames(sigs0)=c("node1","node2")
   } # end Inference
-  return(list(Est=Est, Sigs=sigs, Sigs0=sigs0))
+  return(list(Est=Est, tscore=tscore, Sigs=sigs, Sigs0=sigs0))
   
 }# end function 
