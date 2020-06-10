@@ -12,7 +12,7 @@
 
 
 
-cPCG_theo=function(df){
+cPCG_theo_lambda=function(df){
   require(glmnet)
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -37,7 +37,7 @@ cPCG_theo=function(df){
     
     Coef=coef(out, s=lambda)[-1]
     CoefMatrix[i,] = Coef / apply(X[, -i], 2, sd)
-    Predict = predict(out,XS[, -i]) %>% as.matrix()
+    Predict = as.matrix(predict(out,XS[, -i]))
     Eresidual[,i] = X[, i] - Predict 
   }
   
@@ -52,7 +52,7 @@ cPCG_theo=function(df){
     }
   }
   
-  # EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
+  #EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
   EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
   # EstThresh[abs(EstThresh)>1]=1 *********************************************************
   kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
@@ -89,12 +89,12 @@ cPCG_cv_dfmax=function(df, degree_freedom=1e10){
     out.cv = cv.glmnet(XS[, -i], X[, i], family = "gaussian", parallel = T, nfolds = n)
     if (length(which(coef(out.cv, s='lambda.min')[-1]!=0))<=degree_freedom){ # cv
       Coef = coef(out.cv,s= "lambda.min")[-1]
-      Predict = predict(out.cv,XS[, -i], s= "lambda.min") %>% as.matrix()
+      Predict = as.matrix(predict(out.cv,XS[, -i], s= "lambda.min"))
       print(paste0("i=",i,", df=",length(which(Coef!=0)), ", df selected by CV"))
     } else{ # dfmax
       out = glmnet(XS[, -i], X[, i], family = "gaussian", dfmax = degree_freedom)
       Coef=coef(out,s=out$lambda[which.max(out$df[out$df<=degree_freedom])])[-1]
-      Predict = predict(out,XS[, -i],s=out$lambda[which.max(out$df==degree_freedom)]) %>% as.matrix()
+      Predict = as.matrix(predict(out,XS[, -i],s=out$lambda[which.max(out$df<=degree_freedom)])) # **********
       print(paste0("i=",i,", df=",length(which(Coef!=0)),", dfmax reached"))
     }
     CoefMatrix[i,] = Coef / apply(X[, -i], 2, sd)
@@ -113,7 +113,7 @@ cPCG_cv_dfmax=function(df, degree_freedom=1e10){
     }
   }
   
-  # EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
+  #EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
   EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) )
   # EstThresh[abs(EstThresh)>1]=1 *********************************************************
   kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
@@ -173,7 +173,7 @@ inference=function(list, alpha=0.05, c0=0.25){
     SRec = 1 * (abs(Est) > Threshold); NoNSRec = 1 * (SRec == 0) # SRec is a matrix (0-1 matrix)
     FDPresprop = which(SRec == 1, arr.ind = TRUE) # selected edge location
     
-    sigs=FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),]%>% as.data.frame()
+    sigs=as.data.frame(FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),])
     colnames(sigs)=c("node1","node2")
     
     # c=0.25
@@ -185,7 +185,7 @@ inference=function(list, alpha=0.05, c0=0.25){
     SRecC0 = 1 * (abs(Est) - c0 > ThresholdC0); NoNSRecC0 = 1 * (SRecC0 == 0)
     FDPrespropC0 = which(SRecC0 == 1, arr.ind = TRUE) # selected edge location
     
-    sigs0=FDPrespropC0[which(FDPrespropC0[,1]!=FDPrespropC0[,2]),]%>% as.data.frame()
+    sigs0=as.data.frame(FDPrespropC0[which(FDPrespropC0[,1]!=FDPrespropC0[,2]),])
     colnames(sigs0)=c("node1","node2")
   } # end Inference
   
