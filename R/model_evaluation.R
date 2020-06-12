@@ -466,10 +466,10 @@ blocksize = c(4,10)
 for (n in nl) {
   for (p in pl) {
     for (e in blocksize) {
-      load( file=sprintf("simu_data/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
+      load( file=sprintf("simu_data_v2/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
-      RESULT=model.eval(X, pcor)
-      save(RESULT, file=sprintf("temp/6_10/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
+      RESULT=model.eval(X, pcor, rep = 50)
+      save(RESULT, file=sprintf("results/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
     }
   }
@@ -485,7 +485,7 @@ min.beta = 0.3
 for (n in nl) {
   for (p in pl) {
     for (eta in etal) {
-      load( file=sprintf("simu_data/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
+      load( file=sprintf("simu_data_v2/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
       
       RESULT=model.eval(X, pcor, rep = 5)
       save(RESULT, file=sprintf("temp/6_10/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
@@ -504,7 +504,7 @@ edge = c(1:2)
 for (n in nl) {
   for (p in pl) {
     for (e in edge) {
-      load( file=sprintf("simu_data/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
+      load( file=sprintf("simu_data_v2/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
       
       RESULT=model.eval(X, pcor, rep = 5)
       save(RESULT, file=sprintf("temp/6_10/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )

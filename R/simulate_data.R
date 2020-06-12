@@ -18,13 +18,17 @@ makeSymm=function(m){
 
 makeBlockDiag=function(blocksize=4, p=100, min.beta=0.1, max.beta=1){ # blocksize has to be a factor of p
   reps=p/blocksize
-  S=list()
-  for (i in 1:reps) {
-    bd=matrix(runif(1,min.beta,max.beta)*sample(1,c(1,-1)),blocksize,blocksize)
-    diag(bd)=runif(1,1.25,3)
-    S[[i]]=bd
+  Max=matrix(0, p, p)
+  while (!is.positive.definite(Max)) {
+    S=list()
+    for (i in 1:reps) {
+      bd=matrix(runif(1,min.beta,max.beta)*sample(c(1,-1),1),blocksize,blocksize)
+      diag(bd)=runif(1,1.25,3)
+      S[[i]]=bd
+    }
+    Max=as.matrix(Matrix::bdiag(S))
   }
-  as.matrix(Matrix::bdiag(S))
+  Max
 }
 
 # Following code generate specific network structures and generate multivariate normal random data from them. 
@@ -84,7 +88,7 @@ set.seed(20200520)
 for(n in nl){    
   for(p in pl){
     for(e in c(4,10)){
-      Sigma=makeBlockDiag(blocksize = e, p=p, min.beta = min.beta, max.beta = max.beta)
+    Sigma=makeBlockDiag(blocksize = e, p=p, min.beta = min.beta, max.beta = max.beta)
       pcor=cor2pcor(Sigma)
       X = list()
       for(i in 1:100){            
