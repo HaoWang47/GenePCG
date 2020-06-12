@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 /simu_data
+/simu_data_v2
 /results
 /temp
 /model_evaluation

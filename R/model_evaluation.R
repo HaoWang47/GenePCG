@@ -460,17 +460,38 @@ model.eval=function(X, pcor, rep=10, degfree=5){
 nl = c(60, 80) # Sample Size
 pl = c(100, 200)  # Number of Genes
 #pl = c(100)
-min.beta = 0.3
-max.beta = 1
-blocksize = c(4,10)
+#min.beta = 0.3
+#max.beta = 1
+#blocksize = c(4,10)
+min.beta = 0.05
+max.beta = .5
+blocksize = c(4,8,10)
 for (n in nl) {
   for (p in pl) {
     for (e in blocksize) {
       load( file=sprintf("simu_data_v2/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
-      RESULT=model.eval(X, pcor, rep = 50)
-      save(RESULT, file=sprintf("results/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
+      RESULT=model.eval(X, pcor, rep = 10)
+      save(RESULT, file=sprintf("temp/6_12/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
+    }
+  }
+}
+
+
+# Scale Free ----
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+#pl = c(100)
+min.beta = 0.3
+edge = c(1)
+for (n in nl) {
+  for (p in pl) {
+    for (e in edge) {
+      load( file=sprintf("simu_data_v2/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
+      
+      RESULT=model.eval(X, pcor, rep = 10)
+      save(RESULT, file=sprintf("temp/6_12/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
     }
   }
 }
@@ -488,26 +509,10 @@ for (n in nl) {
       load( file=sprintf("simu_data_v2/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
       
       RESULT=model.eval(X, pcor, rep = 5)
-      save(RESULT, file=sprintf("temp/6_10/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
+      save(RESULT, file=sprintf("temp/6_12/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
       
     }
   }
 }
 
 
-# Scale Free ----
-nl = c(60, 80) # Sample Size
-pl = c(100, 200)  # Number of Genes
-#pl = c(100)
-min.beta = 0.3
-edge = c(1:2)
-for (n in nl) {
-  for (p in pl) {
-    for (e in edge) {
-      load( file=sprintf("simu_data_v2/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
-      
-      RESULT=model.eval(X, pcor, rep = 5)
-      save(RESULT, file=sprintf("temp/6_10/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
-    }
-  }
-}

@@ -123,7 +123,7 @@ for(n in nl){
       A[w] = rbinom(n = length(w), size = 1, prob = 4/p) * ruf
       Sigh = solve(diag(p) - A)          
       Sigma = Sigh %*% t(Sigh)
-      pcor=round(sigma2pcor(Sigma),3)
+      pcor=round(sigma2pcor(Sigma),5)
       X = list()
       for(i in 1:100){            
         Xi = rmvnorm(n = n, sigma = Sigma)            
