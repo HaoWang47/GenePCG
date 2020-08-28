@@ -16,7 +16,7 @@ sigs2vec=function(sigs, P){
 }
 
 
-model.eval=function(X, pcor, rep=10, degfree=5){
+model.eval=function(X, pcor, rep=5, degfree=5){
   require(GeneNet)
   
   p=dim(pcor)[1]
@@ -117,7 +117,7 @@ model.eval=function(X, pcor, rep=10, degfree=5){
     #cPCG_theo=cPCG_theo_lambda(sim.data)
     cPCG_theo=estimating(sim.data)
     #cPCG_cv=cPCG_cv_dfmax(sim.data)
-    cPCG_cv=estimating_cv(sim.data)
+    cPCG_cv=estimating_cv(sim.data,degfree)
     #cPCG_df=cPCG_cv_dfmax(sim.data, degree_freedom = degfree)
     cPCG_df=estimating_q(sim.data,degfree)
     
@@ -459,20 +459,20 @@ model.eval=function(X, pcor, rep=10, degfree=5){
 # Block Diagonal ----
 nl = c(60, 80) # Sample Size
 pl = c(100, 200)  # Number of Genes
-#pl = c(100)
-#min.beta = 0.3
+#min.beta = 0.3 # v2
 #max.beta = 1
 #blocksize = c(4,10)
-min.beta = 0.05
-max.beta = .5
+min.beta = 0.3 # v3, v4 
+max.beta = 0.9
 blocksize = c(4,8,10)
 for (n in nl) {
   for (p in pl) {
     for (e in blocksize) {
-      load( file=sprintf("simu_data_v2/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
-      
-      RESULT=model.eval(X, pcor, rep = 10)
-      save(RESULT, file=sprintf("temp/6_12/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
+      load( file=sprintf("simu_data_v4/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
+      #degf=ceiling(p*length(which(sm2vec(pcor)!=0))/length(which(lower.tri(pcor)))*2)
+      degf=5
+      RESULT=model.eval(X, pcor, rep = 50, degfree = degf)
+      save(RESULT, file=sprintf("temp/6_27/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
     }
   }
@@ -482,16 +482,17 @@ for (n in nl) {
 # Scale Free ----
 nl = c(60, 80) # Sample Size
 pl = c(100, 200)  # Number of Genes
-#pl = c(100)
 min.beta = 0.3
-edge = c(1)
+edge = c(1, 2)
 for (n in nl) {
   for (p in pl) {
     for (e in edge) {
-      load( file=sprintf("simu_data_v2/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
+      load( file=sprintf("simu_data_v4/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
+      #degf=ceiling(p*length(which(sm2vec(pcor)!=0))/length(which(lower.tri(pcor)))*2)
+      degf=10
+      RESULT=model.eval(X, pcor, rep = 50, degfree = degf)
       
-      RESULT=model.eval(X, pcor, rep = 10)
-      save(RESULT, file=sprintf("temp/6_12/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
+      save(RESULT, file=sprintf("temp/6_27/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta) )
     }
   }
 }
@@ -500,16 +501,54 @@ for (n in nl) {
 # Random Structure ----
 nl = c(60, 80) # Sample Size
 pl = c(100, 200)  # Number of Genes
-#pl = c(100)
-etal = c(.01, .03, .05)
+etal = c(.01, .02, .03)
 min.beta = 0.3
 for (n in nl) {
   for (p in pl) {
     for (eta in etal) {
-      load( file=sprintf("simu_data_v2/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
+      load( file=sprintf("simu_data_v4/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
+      #degf=ceiling(p*length(which(sm2vec(pcor)!=0))/length(which(lower.tri(pcor)))*2)
+      degf=10
+      RESULT=model.eval(X, pcor, rep = 50, degfree = degf)
+      save(RESULT, file=sprintf("temp/6_27/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
       
-      RESULT=model.eval(X, pcor, rep = 5)
-      save(RESULT, file=sprintf("temp/6_12/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta) )
+    }
+  }
+}
+
+
+
+
+
+
+# Scale Free v3 ----
+nl = c(60) # Sample Size
+pl = c(100)  # Number of Genes
+edge = c(1)
+for (n in nl) {
+  for (p in pl) {
+    for (e in edge) {
+      load( file=sprintf("simu_data_v3/ScaleFree_simu_n%d_p%d_e%d.RData", n, p, e) )
+      
+      RESULT=model.eval(X, pcor, rep = 10)
+      save(RESULT, file=sprintf("temp/6_18/ScaleFree_simu_n%d_p%d_e%d.RData", n, p, e) )
+    }
+  }
+}
+
+
+# Random Structure v3 ----
+nl = c(60) # Sample Size
+pl = c(100)  # Number of Genes
+#pl = c(100)
+etal = c( .03, .05)
+for (n in nl) {
+  for (p in pl) {
+    for (eta in etal) {
+      load( file=sprintf("simu_data_v3/Random_simu_n%d_p%d_eta%g.RData", n, p, eta) )
+      
+      RESULT=model.eval(X, pcor, rep = 10)
+      save(RESULT, file=sprintf("temp/6_18/Random_simu_n%d_p%d_eta%g.RData", n, p, eta) )
       
     }
   }

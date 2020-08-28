@@ -4,11 +4,9 @@
 
 # Data: Columns are genes/variables, rows are samples under certain conditions or different treatment conditions or time series;
 
-# functions: 
-#
-#
-#
-#
+
+
+### These functions not used for data simulation
 
 
 
