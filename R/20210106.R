@@ -500,7 +500,7 @@ for (n in nl) {
   for (p in pl) {
     for (e in blocksize) {
       load( file=sprintf("simu_data/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
-      degf=5
+      degf=10
       RESULT=model.eval(X, pcor, rep = 50, degfree = degf)
       save(RESULT, file=sprintf("results/BlockDiag_FGGM_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta) )
       
