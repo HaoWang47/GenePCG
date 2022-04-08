@@ -1,5 +1,5 @@
 
-estimating=function(df){
+CLEVEL_estimating=function(df){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
   IndMatrix = matrix(1, p, p) - diag(rep(1, p))
@@ -18,10 +18,10 @@ estimating=function(df){
   
   shat=sqrt(n/(log(p)^3))
   lambda=sqrt(2*(2+0.01)*log(p/shat)/n)
+  # lambda = sqrt(2 * log(p) / n) # theoretical best lambda
   
   for (i in 1 : p){
     
-    #lambda = sqrt(2 * log(p) / n) # theoretical best lambda
     out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda)
     
     Coef = out$beta
@@ -48,7 +48,7 @@ estimating=function(df){
   #*********************************************************
   # (t0 * sqrt(log(p) / n) is the threshold, t0=2
   # (t0 * sqrt(log(p) / n) * IndMatrix)  p by p threshold matrix, eg 0.331837 *I(p-by-p)
-  # page 9, Thresholding removes the small estimates while keepig the large ones, which can stabilize the variation of partial correlation estimator without dramatically increasing the bias
+  # page 9, Thresholding removes the small estimates while keeping the large ones, which can stabilize the variation of partial correlation estimator without dramatically increasing the bias
   ## abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) true false matrix
   ## EstThresh keep those partial correlations which is greater (t0 * sqrt(log(p) / n))
   
@@ -65,9 +65,8 @@ estimating=function(df){
               n=n, p=p))
 }  
 
-estimating_cv=function(df, degree_freedom){
+CLEVEL_estimating_cv=function(df, degree_freedom){
   require(glmnet)
-  require(doMC)
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
   IndMatrix = matrix(1, p, p) - diag(rep(1, p))
@@ -84,17 +83,16 @@ estimating_cv=function(df, degree_freedom){
   colnames(XS)=colnames(df)
   
   for (i in 1 : p){
-    registerDoMC(cores=2)
-    out.cv = cv.glmnet(XS[, -i], X[, i], family = "gaussian", parallel = T, nfolds = n)
+    out.cv = cv.glmnet(XS[, -i], X[, i], family = "gaussian", nfolds = n)
     if (length(which(coef(out.cv, s='lambda.min')[-1]!=0))<=degree_freedom){ # cv
       Coef = coef(out.cv,s= "lambda.min")[-1]
       Predict = as.matrix(predict(out.cv,XS[, -i], s= "lambda.min"))
-      print(paste0("i=",i,", df=",length(which(Coef!=0)), ", df selected by CV"))
+      #print(paste0("i=",i,", df=",length(which(Coef!=0)), ", df selected by CV"))
     } else{ # dfmax
       out = glmnet(XS[, -i], X[, i], family = "gaussian", dfmax = degree_freedom)
       Coef=coef(out,s=out$lambda[which.max(out$df[out$df<=degree_freedom])])[-1]
       Predict = as.matrix(predict(out,XS[, -i],s=out$lambda[which.max(out$df[out$df<=degree_freedom])])) # **********
-      print(paste0("i=",i,", df=",length(which(Coef!=0)),", dfmax reached"))
+      #print(paste0("i=",i,", df=",length(which(Coef!=0)),", dfmax reached"))
     }
     CoefMatrix[i,] = Coef / apply(X[, -i], 2, sd)
     Eresidual[,i] = X[, i] - Predict 
@@ -113,10 +111,7 @@ estimating_cv=function(df, degree_freedom){
   }
   
   EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
-  #EstThresh = Est * ( abs(Est) >= (sqrt(log(p) / n) * IndMatrix) ) 
-  #EstThresh[abs(EstThresh)>1]=1 
-  #*********************************************************
-  
+
   kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
   SE=sqrt((kappa*(1-EstThresh^2))^2/n)
   tscore=Est/SE
@@ -185,6 +180,5 @@ inference=function(list, alpha=0.05, c0=0.25){
   colnames(sigs0)=c("node1","node2")
   
   return(list(sigs=sigs,sigs0=sigs0))  
-  #return(list(clevel0=FDPresprop,clevel=FDPrespropC0))
 }
 

@@ -21,7 +21,6 @@ area_roc=function(x){
   sum
 }
 
-
 AUC=function(RESULT){
   ENF=apply(RESULT$ROC$tempstore.ENF, 2, area_roc)
   MLE=apply(RESULT$ROC$tempstore.MLE, 2, area_roc)

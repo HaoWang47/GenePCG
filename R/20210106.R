@@ -140,8 +140,8 @@ model.eval=function(X, pcor, rep=5, degfree=5){
     
     
     ### cPCG
-    cPCG_theo=estimating(sim.data)
-    cPCG_cv=estimating_cv(sim.data,degfree)
+    cPCG_theo=CLEVEL_estimating(sim.data)
+    cPCG_cv=CLEVEL_estimating_cv(sim.data,degfree)
     # estimates by cPCG
     Est_theo=sm2vec(cPCG_theo$Est)
     Est_cv=sm2vec(cPCG_cv$Est)

@@ -85,12 +85,13 @@ for(n in nl){
       Sigh = solve(diag(p) - A)            
       Sigma = Sigh %*% t(Sigh)
       pcor=round(sigma2pcor(Sigma),5)
+      sparsity=length(which(sm2vec(pcor)!=0))
       X = list()
-      for(i in 1:3){            
+      for(i in 1:100){            
         Xi = rmvnorm(n = n, sigma = Sigma)            
         X[[i]] = Xi
       }
-      save(A, pcor, Sigma, X, file=sprintf("simu_data/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta)) 
+      save(A, pcor, sparsity, Sigma, X, file=sprintf("simu_data/ScaleFree_simu_n%d_p%d_e%d_min_beta%g.RData", n, p, e, min.beta)) 
     }
   }
 }
@@ -115,13 +116,104 @@ for(n in nl){
       Sigh = solve(diag(p) - A)          
       Sigma = Sigh %*% t(Sigh)
       pcor=round(sigma2pcor(Sigma),5)
+      sparsity=length(which(sm2vec(pcor)!=0))
       X = list()
       for(i in 1:100){            
         Xi = rmvnorm(n = n, sigma = Sigma)            
         X[[i]] = Xi
       }
-      save(pcor, Sigma, X, file=sprintf("simu_data/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta)) 
+      save(pcor, sparsity, Sigma, X, file=sprintf("simu_data/Random_simu_n%d_p%d_eta%g_min_beta%g.RData", n, p, eta, min.beta)) 
     }
   }
 }
+
+
+
+
+
+##################### 2022-04 #######################
+## Scale Free
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+set.seed(20220406)
+
+for(n in nl){    
+  for(p in pl){
+    for(e in 1:2){
+      g <- sample_pa(p, power=1, m=e, directed = FALSE)
+      omega=as_adjacency_matrix(g) %>% as.matrix()
+      for(h1 in 1:(p-1)){
+        for(h2 in (h1+1):p){
+          if(omega[h1,h2]!=0){
+            temp=runif(1, 0.5, 1.5)*sample(c(-1,1),size=1)
+            omega[h1,h2]=temp
+            omega[h2,h1]=temp
+          }
+        }
+      }
+      
+      diag(omega)=3.8
+      increment=.05
+      while (min(eigen(omega)$values)<0) {
+        diag(omega)=3.8+increment
+        increment=increment+0.05
+      }
+      ppc=-sm2vec(cov2cor(omega))
+      ppc=ppc[which(ppc!=0)]
+      sparsity=round(length(ppc)/(p*(p-1)/2),3)
+      Sigma=solve(omega)
+      #is.positive.definite(Sigma)
+      X = list()
+      for(i in 1:100){            
+        Xi = rmvnorm(n = n, sigma = Sigma)            
+        X[[i]] = Xi
+      }
+      save(omega, sparsity, Sigma, X, file=sprintf("simu_data/ScaleFree_simu_n%d_p%d_e%d.RData", n, p, e)) 
+    }
+  }
+}
+
+## Random
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+set.seed(20220407)
+
+for(n in nl){    
+  for(p in pl){
+    for(eta in c(0.01,0.02,0.03)){
+      g <- sample_gnp(p, eta, directed = FALSE)
+      omega=as_adjacency_matrix(g) %>% as.matrix()
+      for(h1 in 1:(p-1)){
+        for(h2 in (h1+1):p){
+          if(omega[h1,h2]!=0){
+            temp=runif(1, 0.5, 1.5)*sample(c(-1,1),size=1)
+            omega[h1,h2]=temp
+            omega[h2,h1]=temp
+          }
+        }
+      }
+      
+      diag(omega)=3
+      increment=.05
+      while (min(eigen(omega)$values)<0) {
+        diag(omega)=3.8+increment
+        increment=increment+0.05
+      }
+      ppc=-sm2vec(cov2cor(omega))
+      ppc=ppc[which(ppc!=0)]
+      sparsity=round(length(ppc)/(p*(p-1)/2),3)
+      Sigma=solve(omega)
+      #is.positive.definite(Sigma)
+      X = list()
+      for(i in 1:100){            
+        Xi = rmvnorm(n = n, sigma = Sigma)            
+        X[[i]] = Xi
+      }
+      save(omega, sparsity, Sigma, X, file=sprintf("simu_data/Random_simu_n%d_p%d_eta%g.RData", n, p, eta)) 
+    }
+  }
+}
+
+
+
 
