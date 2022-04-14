@@ -139,7 +139,7 @@ set.seed(20220406)
 
 for(n in nl){    
   for(p in pl){
-    for(e in 1:2){
+    for(e in 1:3){
       g <- sample_pa(p, power=1, m=e, directed = FALSE)
       omega=as_adjacency_matrix(g) %>% as.matrix()
       for(h1 in 1:(p-1)){
