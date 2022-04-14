@@ -13,6 +13,7 @@ makeSymm=function(m){
 }
 
 sigma2pcor=function(sigma){
+  require(corpcor)
   if (is.positive.definite(sigma)) {
     omega=solve(sigma)
     p=dim(omega)[1]
@@ -214,6 +215,42 @@ for(n in nl){
   }
 }
 
+
+## Block Diagonal
+makeBlockDiag=function(blocksize=4, p=100, min.beta=0.1, max.beta=1){ # blocksize has to be a factor of p
+  reps=p/blocksize
+  S=list()
+  for (i in 1:reps) {
+    bd=matrix(runif(1,min.beta,max.beta),blocksize,blocksize)
+    diag(bd)=runif(1,1,1.25)
+    S[[i]]=bd
+  }
+  as.matrix(Matrix::bdiag(S))
+}
+
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+min.beta=0.3
+max.beta=0.9
+set.seed(20220410)
+
+for(n in nl){    
+  for(p in pl){
+    for(e in c(4,8,10)){
+      Sigma=makeBlockDiag(blocksize=e, p=p, min.beta=min.beta, max.beta=max.beta)
+      omega=solve(Sigma)
+      ppc=-sm2vec(cov2cor(omega))
+      ppc=ppc[which(ppc!=0)]
+      sparsity=round(length(ppc)/(p*(p-1)/2),3)
+      X = list()
+      for(i in 1:100){            
+        Xi = rmvnorm(n = n, sigma = Sigma)            
+        X[[i]] = Xi
+      }
+      save(omega, sparsity, Sigma, X, file=sprintf("simu_data/BlockDiag_simu_n%d_p%d_e%d_min_beta%g_max_beta%g.RData", n, p, e, min.beta, max.beta)) 
+    }
+  }
+}
 
 
 
