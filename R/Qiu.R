@@ -1,5 +1,5 @@
 
-CLEVEL_estimating=function(df){
+CLEVEL_estimating=function(df, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
   IndMatrix = matrix(1, p, p) - diag(rep(1, p))
@@ -16,9 +16,13 @@ CLEVEL_estimating=function(df){
   colnames(X)=colnames(df)
   colnames(XS)=colnames(df)
   
-  shat=sqrt(n/(log(p)^3))
-  lambda=sqrt(2*(2+0.01)*log(p/shat)/n)
-  # lambda = sqrt(2 * log(p) / n) # theoretical best lambda
+  
+  if(missing(lambda)){
+    shat=sqrt(n/(log(p)^3))
+    lambda=sqrt(2*(2+0.01)*log(p/shat)/n)
+    #lambda = sqrt(2 * log(p) / n) # theoretical best lambda
+    print(paste0("Default lambda is used, which is ", round(lambda, 5)))
+  }
   
   for (i in 1 : p){
     
