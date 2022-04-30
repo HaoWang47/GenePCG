@@ -162,7 +162,7 @@ inference=function(list, alpha=0.05, c0=0.25){
   FDPresprop = which(SRec == 1, arr.ind = TRUE) # selected edge location
   
   sigs=as.data.frame(FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),])
-  colnames(sigs)=c("node1","node2")
+  #colnames(sigs)=c("node1","node2")
   
   # c=0.05 by default
   FDPpropC0 = 2 * ( sqrt(n) * p * ( 1 - pnorm( tau * sqrt(log(p)) ) ) + p * (p - 1 - sqrt(n)) * ( 1 - pnorm( sqrt(n) * c0 / sqrt(kappa) + tau * sqrt(log(p)) ) ) ) / rejectpropC0
@@ -177,7 +177,7 @@ inference=function(list, alpha=0.05, c0=0.25){
   
   
   sigs0=as.data.frame(FDPrespropC0[which(FDPrespropC0[,1]!=FDPrespropC0[,2]),])
-  colnames(sigs0)=c("node1","node2")
+  #colnames(sigs0)=c("node1","node2")
   
   return(list(sigs=sigs,sigs0=sigs0))  
 }

@@ -174,6 +174,89 @@ for(n in nl){
   }
 }
 
+
+## Scale Free.5
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+set.seed(20220420)
+
+for(n in nl){    
+  for(p in pl){
+    for(e in 1:3){
+      g <- sample_pa(p, power=.5, m=e, directed = FALSE)
+      omega=as_adjacency_matrix(g) %>% as.matrix()
+      for(h1 in 1:(p-1)){
+        for(h2 in (h1+1):p){
+          if(omega[h1,h2]!=0){
+            temp=runif(1, 0.5, 1.5)*sample(c(-1,1),size=1)
+            omega[h1,h2]=temp
+            omega[h2,h1]=temp
+          }
+        }
+      }
+      
+      diag(omega)=3.8
+      increment=.05
+      while (min(eigen(omega)$values)<0) {
+        diag(omega)=3.8+increment
+        increment=increment+0.05
+      }
+      ppc=-sm2vec(cov2cor(omega))
+      ppc=ppc[which(ppc!=0)]
+      sparsity=round(length(ppc)/(p*(p-1)/2),3)
+      Sigma=solve(omega)
+      #is.positive.definite(Sigma)
+      X = list()
+      for(i in 1:100){            
+        Xi = rmvnorm(n = n, sigma = Sigma)            
+        X[[i]] = Xi
+      }
+      save(omega, sparsity, Sigma, X, file=sprintf("simu_data/ScaleFree.5_simu_n%d_p%d_e%d.RData", n, p, e)) 
+    }
+  }
+}
+
+## Scale Free.1
+nl = c(60, 80) # Sample Size
+pl = c(100, 200)  # Number of Genes
+set.seed(20220421)
+
+for(n in nl){    
+  for(p in pl){
+    for(e in 1:3){
+      g <- sample_pa(p, power=.1, m=e, directed = FALSE)
+      omega=as_adjacency_matrix(g) %>% as.matrix()
+      for(h1 in 1:(p-1)){
+        for(h2 in (h1+1):p){
+          if(omega[h1,h2]!=0){
+            temp=runif(1, 0.5, 1.5)*sample(c(-1,1),size=1)
+            omega[h1,h2]=temp
+            omega[h2,h1]=temp
+          }
+        }
+      }
+      
+      diag(omega)=2
+      increment=.05
+      while (min(eigen(omega)$values)<0) {
+        diag(omega)=3.8+increment
+        increment=increment+0.05
+      }
+      ppc=-sm2vec(cov2cor(omega))
+      ppc=ppc[which(ppc!=0)]
+      sparsity=round(length(ppc)/(p*(p-1)/2),3)
+      Sigma=solve(omega)
+      #is.positive.definite(Sigma)
+      X = list()
+      for(i in 1:100){            
+        Xi = rmvnorm(n = n, sigma = Sigma)            
+        X[[i]] = Xi
+      }
+      save(omega, sparsity, Sigma, X, file=sprintf("simu_data/ScaleFree.1_simu_n%d_p%d_e%d.RData", n, p, e)) 
+    }
+  }
+}
+
 ## Random
 nl = c(60, 80) # Sample Size
 pl = c(100, 200)  # Number of Genes

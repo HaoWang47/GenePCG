@@ -28,7 +28,7 @@ sigs2vec=function(sigs, P){
   for (h in 1: dim(sigs)[1]){
     m[sigs[h,1],sigs[h,2]]=1
   }
-  sm2vec(m)
+  sm2vec(m,diag = F)
 }
 
 
@@ -192,7 +192,7 @@ PCGII_estimating_cv=function(df, IIC=TRUE, prior, degree_freedom){
 model.eval=function(X, omega, rep=5, degfree=20, prior_prop=0.05){
 
   p=dim(omega)[1] 
-  truth<-sm2vec(omega) 
+  truth<-sm2vec(omega, diag = F) 
   TP<- which(truth!=0) 
   CN=p*(p-1)/2-length(TP) 
   CP=length(TP)
@@ -323,29 +323,29 @@ model.eval=function(X, omega, rep=5, degfree=20, prior_prop=0.05){
     cLevel_theo=CLEVEL_estimating(sim.data)
     cLevel_cv=CLEVEL_estimating_cv(sim.data,degfree)
     # estimates by cLevel
-    Est_cLevel_theo=sm2vec(cLevel_theo$Est)
-    Est_cLevel_cv=sm2vec(cLevel_cv$Est)
+    Est_cLevel_theo=sm2vec(cLevel_theo$Est, diag = F)
+    Est_cLevel_cv=sm2vec(cLevel_cv$Est, diag = F)
     # test statistics of cLevel
-    tscore_cLevel_theo=sm2vec(cLevel_theo$tscore)
-    tscore_cLevel_cv=sm2vec(cLevel_cv$tscore)
+    tscore_cLevel_theo=sm2vec(cLevel_theo$tscore, diag = F)
+    tscore_cLevel_cv=sm2vec(cLevel_cv$tscore, diag = F)
     print("cLevel done")
     
     ### PCGII
     PCGII_theo=PCGII_estimating(df=sim.data, prior = prior)
     PCGII_cv=PCGII_estimating_cv(df=sim.data, prior = prior, degree_freedom =  degfree)
     # estimates by PCGII
-    Est_PCGII_theo=sm2vec(PCGII_theo$Est)
-    Est_PCGII_cv=sm2vec(PCGII_cv$Est)
+    Est_PCGII_theo=sm2vec(PCGII_theo$Est, diag = F)
+    Est_PCGII_cv=sm2vec(PCGII_cv$Est, diag = F)
     # test statistics of PCGII
-    tscore_PCGII_theo=sm2vec(PCGII_theo$tscore)
-    tscore_PCGII_cv=sm2vec(PCGII_cv$tscore)
+    tscore_PCGII_theo=sm2vec(PCGII_theo$tscore, diag = F)
+    tscore_PCGII_cv=sm2vec(PCGII_cv$tscore, diag = F)
     print("PCGII done")
     
     ### Shrunk Partial Cor
     GGM=pcor.shrink(sim.data, verbose=FALSE) # OPTIMAL
     lambda=attr(GGM, "lambda") 
     while (lambda == 1){lambda=0.99999}
-    shrunk_p=sm2vec(GGM) # off diagonal elements of estimated shrunk partial corr matrix
+    shrunk_p=sm2vec(GGM, diag = F) # off diagonal elements of estimated shrunk partial corr matrix
     # P values by Empirical null fitting (ENF)
     ENF.test=network.test.edges(GGM, fdr=TRUE, plot=FALSE,verbose=FALSE) 
     ENF.test=ENF.test[order(ENF.test$node1,ENF.test$node2),] # node1 is col; WATCH OUT:  the test must be in node's order. Sort by node 2 and by node 1
