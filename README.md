@@ -1,2 +1,2 @@
 # GenePCG
-Gene Co-expression Network Reconstruction with c-level Partial Correlation Graph
+Gene Network Reconstruction by Partial Correlation Graph with Information Incorporation
