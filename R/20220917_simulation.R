@@ -1,21 +1,5 @@
 ############# Last updated on 20220919 #############;
 
-# Reconsider the combination of number of edges and information accuracy for prior knowledge.
-# Focus on one setting for PCGII performance, e.g. 70% of all, 70% of information is correct.
-# For sensitivity analysis, consider few settings. 4 settings maybe.
-
-
-############# Last updated on 20220616 #############;
-
-# This simulation study generates data from less ill-conditioned precision matrix, i.e. eigenvalue-ratio is not too large, although the partial correlation strength would be weaker; (not too weak, signal should be larger than 0.15 ideally)
-# This simulation study applies the new-developed PCGII algorithm, which estimates the covariance matrix of residuals first via no-info node-wise penalized regressions and then corrects the bias with coefficients estimated via information incorporated regressions; a two-step approach
-# This simulation study also checks the effects of tunning parameters empirically. 
-# updates: Dr. Liu suggested to re-consider the set of numbers of true edges included as prior information. We can choose all true edges, 80% true edges, 60% true edges ... 
-
-# For G true edges, 80%G true edges, 60%G true edges
-
-# Data generated from random structure on 20220521 was not great in terms of fdr controlling, new data is generated on 20220616
-
 library(igraph)
 library(tidyverse)
 library(GeneNet)
@@ -24,8 +8,8 @@ library(corpcor)
 library(glmnet)
 library(mvtnorm)
 
-source("~/Desktop/GenePCG/R/shrinkagefunctions.R") # https://github.com/V-Bernal/GGM-Shrinkage
-
+source("./R/shrinkagefunctions.R") # https://github.com/V-Bernal/GGM-Shrinkage
+source("./R/PCGII.R")
 ############# Simulate Data, 2022/05/12 #############;
 
 makeBlockDiag=function(blocksize=4, p=20, min.beta=0.2, max.beta=0.5){ # blocksize has to be a factor of p
@@ -310,197 +294,6 @@ for(p in pl){
 
 #### Functions ####
 
-sigs2vec=function(sigs, P){
-  require(corpcor)
-  m=matrix(0,P,P)
-  for (h in 1: dim(sigs)[1]){
-    m[sigs[h,1],sigs[h,2]]=1
-  }
-  sm2vec(m)
-}
-
-unMat=function(X_est, X_p){
-  # X is a p by p matrix
-  p=dim(X_est)[2]
-  out=matrix(NA, nrow=p*(p-1)/2, ncol=4)
-  ind=1
-  for (i in 1:(p-1)){
-    for (j in (i+1):p){
-      out[ind,1]=i
-      out[ind,2]=j
-      out[ind,3]=X_est[i,j]
-      out[ind,4]=X_p[i,j]
-      ind=ind+1
-    }
-  }
-  colnames(out)=c("node1","node2","pcor","pval")
-  out
-}
-
-PCGII2=function(df, prior, lambda){
-  n = dim(df)[1]; p = dim(df)[2]
-  t0=2
-  IndMatrix = matrix(1, p, p) - diag(rep(1, p))
-  Eresidual = matrix(0, n, p) # regression residuals matrix n*p
-  CoefMatrix = matrix(0, p, p - 1) # regression coefficient matrix p*p-1
-  meanX = colMeans(df)
-  X = t(t(df) - meanX)
-  XS = matrix(0, n, p)
-  # XS: Standardized X
-  for (i in 1 : p){
-    XS[, i] = X[, i] / sd(X[, i])
-  }
-  
-  colnames(X)=colnames(df)
-  colnames(XS)=colnames(df)
-  
-  if(missing(lambda)){
-    shat=sqrt(n/(log(p)^3))
-    lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
-  }
-  
-  default_penalty=rep(1,p-1)
-  for (i in 1 : p){
-    penalty_fac=default_penalty
-    temp.node=prior[with(prior,row==i),'col']
-    
-    for(nds in temp.node){
-      if (nds < i) {penalty_fac[nds]=0} else {penalty_fac[nds-1]=0.3}
-    }
-    
-    out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda, penalty.factor=penalty_fac)
-    Coef = out$beta
-    CoefMatrix[i, ] = as.numeric(Coef) / apply(X[, -i], 2, sd)
-    
-    out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda)
-    Predict = predict(out, XS[, -i], type = "link")
-    Eresidual[, i] = X[, i] - Predict
-  }
-  
-  CovRes = t(Eresidual) %*% Eresidual / n # residuals covariance
-  Est = matrix(1, p, p) # estimated partial correlation (rho hat in the paper )
-  
-  for (i in 1 : (p - 1)){
-    for (j in (i + 1) : p){
-      temp = Eresidual[, i] * Eresidual[, j] + Eresidual[, i]^2 * CoefMatrix[j, i] + Eresidual[, j]^2 * CoefMatrix[i, j - 1]
-      Est[i, j] = mean(temp) / sqrt(diag(CovRes)[i] * diag(CovRes)[j])
-      Est[j, i] = Est[i, j]
-    }
-  }
-  
-  EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
-  
-  kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
-  
-  SE=sqrt((kappa*(1-EstThresh^2))^2/n)
-  
-  tscore=Est/SE
-  
-  return(list(Est=Est,
-              tscore=tscore,
-              kappa=kappa,
-              EstThresh=EstThresh,
-              n=n, p=p))
-  
-}
-
-clevel=function(df, lambda){
-  n = dim(df)[1]; p = dim(df)[2]
-  t0=2
-  IndMatrix = matrix(1, p, p) - diag(rep(1, p))
-  Eresidual = matrix(0, n, p) # regression residuals matrix n*p
-  CoefMatrix = matrix(0, p, p - 1) # regression coefficient matrix p*p-1
-  meanX = colMeans(df)
-  X = t(t(df) - meanX)
-  XS = matrix(0, n, p)
-  # XS: Standardized X
-  for (i in 1 : p){
-    XS[, i] = X[, i] / sd(X[, i])
-  }
-  
-  colnames(X)=colnames(df)
-  colnames(XS)=colnames(df)
-  
-  if(missing(lambda)){
-    shat=sqrt(n/(log(p)^3))
-    lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
-  }
-  
-  for (i in 1 : p){
-    out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda)
-    
-    Coef = out$beta
-    Predict = predict(out, XS[, -i], type = "link")
-    CoefMatrix[i, ] = as.numeric(Coef) / apply(X[, -i], 2, sd)
-    Eresidual[, i] = X[, i] - Predict
-  }
-  
-  CovRes = t(Eresidual) %*% Eresidual / n # residuals covariance
-  Est = matrix(1, p, p) # estimated partial correlation (rho hat in the paper )
-  
-  for (i in 1 : (p - 1)){
-    for (j in (i + 1) : p){
-      temp = Eresidual[, i] * Eresidual[, j] + Eresidual[, i]^2 * CoefMatrix[j, i] + Eresidual[, j]^2 * CoefMatrix[i, j - 1]
-      Est[i, j] = mean(temp) / sqrt(diag(CovRes)[i] * diag(CovRes)[j])
-      Est[j, i] = Est[i, j]
-    }
-  }
-  
-  # sparse partial correlation estimation with threshold (rho ~ in the paper)
-  EstThresh = Est * ( abs(Est) >= (t0 * sqrt(log(p) / n) * IndMatrix) ) 
-  
-  kappa = (n / 3) * mean( colSums(Eresidual^4) / (colSums(Eresidual^2))^2 )  # forth moment, a number 
-  
-  SE=sqrt((kappa*(1-EstThresh^2))^2/n)
-  
-  tscore=Est/SE
-
-  return(list(Est=Est,
-              tscore=tscore,
-              kappa=kappa,
-              EstThresh=EstThresh,
-              n=n, p=p))
-}
-
-inference=function(list, alpha=0.05, c0=0.25){
-  Est=list$Est
-  tscore=list$tscore
-  kappa=list$kappa
-  EstThresh=list$EstThresh
-  n=list$n; p=list$p; 
-  t0=2; tau = seq(0, 3.5, 0.01); smax = n / 2; lentau = length(tau) 
-  
-  
-  resprop = list() # selected edges with different tau's, a list of 351 elements
-  rejectprop = c()
-  for (i in 1 : lentau){ # tau vary from 0 to 3.50 by 0.01, length=351
-    Threshold = tau[i] * sqrt(kappa * log(p) / n) * (1 - EstThresh^2)
-    
-    # c=0
-    SRec = 1 * (abs(Est) > Threshold) # selected edge (matrix with 0 & 1) at tau[i]
-    NoNSRec = 1 * (SRec == 0)
-    resprop[[i]] = which(SRec == 1, arr.ind = TRUE) # select those significant edges at tau[i], off-diagonal elements, first columns, then second columns
-    rejectprop = c(rejectprop, max(1, (sum(SRec) - p))) 
-  }
-  
-  # c=0
-  FDPprop = 2 * (p * (p - 1)) * ( 1 - pnorm( tau * sqrt(log(p)) ) ) / rejectprop # FDP corresponding to each tau (page 10)
-  
-  FDPresprop = c()
-  
-  # determine thresholding parameter tau by controling FDP 
-  if (sum(FDPprop <= alpha) > 0) tauprop = min(c(2, tau[FDPprop <= alpha])) 
-  if (sum(FDPprop <= alpha) == 0) tauprop = 2
-  Threshold = tauprop * sqrt(kappa * log(p) / n) * (1 - EstThresh^2)
-  SRec = 1 * (abs(Est) > Threshold); NoNSRec = 1 * (SRec == 0) # SRec is a matrix (0-1 matrix)
-  FDPresprop = which(SRec == 1, arr.ind = TRUE) # selected edge location
-  
-  sigs=as.data.frame(FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),])
-  #colnames(sigs)=c("node1","node2")
-  
-  return(list(sigs=sigs))  
-}
-
 eval_models=function(X, omega, rep=3, Seed=1234){
   set.seed(Seed)
   # here, we want to check how incorrect prior affects our approach
@@ -559,11 +352,6 @@ eval_models=function(X, omega, rep=3, Seed=1234){
     prior
   })
   names(prior_pct)=c("70%ofALL","30%ofALL")
-  
-  double_prior=function(prior){
-    rbind.data.frame(prior, prior %>% transform(row = pmax(row, col), col = pmin(row, col))) %>% 
-      arrange(row, col)
-  }
   
   al=seq(0.001, 0.2005, 0.0035) # inference sig levels
   cutt=seq(0.001,1,0.001) # desired FPR
@@ -760,14 +548,14 @@ eval_models=function(X, omega, rep=3, Seed=1234){
     
     ### PCGII-prior.all
     PCGII_all=lapply(prior_all, function(pri){
-      temp=PCGII2(df=sim.data, prior=double_prior(pri), lambda=lam)
+      temp=PCGII(df=sim.data, prior=double_prior(pri), lambda=lam)
       list(out=temp, Est=sm2vec(temp$Est, diag=F), tscore=sm2vec(temp$tscore, diag = F))
     })
 
     ### PCGII-70/30 of true edges
     PCGII_pct=lapply(prior_pct, function(pri){
       lapply(pri, function(prii){
-        temp=PCGII2(df=sim.data, prior=double_prior(prii), lambda=lam)
+        temp=PCGII(df=sim.data, prior=double_prior(prii), lambda=lam)
         list(out=temp, Est=sm2vec(temp$Est, diag=F), tscore=sm2vec(temp$tscore, diag = F))
       })
     })
@@ -1918,7 +1706,7 @@ my_fdr(res) %>% gather(key="approach",value = "fdr") %>%
 library(microbenchmark)
 microbenchmark(
   "PCGII" = {
-    temp1=inference(PCGII2(df=sim.data, prior=double_prior(pri), lambda=lam))
+    temp1=inference(PCGII(df=sim.data, prior=double_prior(pri), lambda=lam))
     },
   "FGGM" = {
     temp2=FastGGM(sim.data, lambda=lam) 

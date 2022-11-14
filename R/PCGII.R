@@ -10,7 +10,8 @@
 
 ## PCGII() is the function to apply our proposed method to get the estimated partial correlation graph
 ## Input: 
-# df: a N by p matrix, where each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+# df: a N by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+# prior: a k by 2 matrix, in which each row corresponds to 
 PCGII=function(df, prior, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -173,4 +174,9 @@ inference=function(list, alpha=0.05, c0=0.25){
   #colnames(sigs)=c("node1","node2")
   
   return(list(sigs=sigs))  
+}
+
+double_prior=function(prior){
+  rbind.data.frame(prior, prior %>% transform(row = pmax(row, col), col = pmin(row, col))) %>% 
+    arrange(row, col) %>% unique()
 }
