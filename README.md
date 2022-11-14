@@ -17,7 +17,7 @@ Graphs with Information Incorporation. To be submitted.
 
 This is a tutorial script for researchers who are interested in applying PCGII on omics data to learn the direct association structure of omics features. The main function `PGCII()` takes a biologically pre-processed expression data matrix as input, and returns a list of statistics (estimates and test statistics). The function `inference()` takes the list returned by `PGCII()` as input and conduct simultaneous test to identify significant partial correlations with False Discovery Rate (FDR) controlled at a pre-determined nominal level (0.05 by default). 
 
-# Installation and Package loading
+# Package loading
 ```r
 # R version is required >= 4.1.2
 # When the first time to use the package, please make sure all required packages are installed under your R environment
