@@ -10,8 +10,13 @@
 
 ## PCGII() is the function to apply our proposed method to get the estimated partial correlation graph
 ## Input: 
-# df: a N by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
-# prior: a k by 2 matrix, in which each row corresponds to 
+# df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+# prior: the prior set, a k by 2 dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe.
+# lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+# Remark: mathematical standardization will be automatically done within the function.
+## Output:
+# This function returns a list of estimated partial correlation matrix (Est), sparse partial correlation estimation matrix with threshold (EstThresh), estimated kappa (kappa), estimated test statistics matrix of partial correlations (tscore), sample size (n) and number of nodes (p).
+## Remark: mathematical standardization will be automatically done within the function.
 PCGII=function(df, prior, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -79,6 +84,14 @@ PCGII=function(df, prior, lambda){
   
 }
 
+
+## clevel() is the function to apply the method originally proposed in paper 'Yumou Qiu, Xiao-Hua Zhou, Estimating c-level partial correlation graphs with application to brain imaging, Biostatistics, Volume 21, Issue 4, October 2020, Pages 641–658, https://doi.org/10.1093/biostatistics/kxy076', code credit to Dr. Yumou Qiu.
+## Input: 
+# df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+# lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+## Output:
+# This function returns a list of estimated partial correlation matrix (Est), sparse partial correlation estimation matrix with threshold (EstThresh), estimated kappa (kappa), estimated test statistics matrix of partial correlations (tscore), sample size (n) and number of nodes (p).
+## Remark: mathematical standardization will be automatically done within the function.
 clevel=function(df, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -137,7 +150,14 @@ clevel=function(df, lambda){
               n=n, p=p))
 }
 
-inference=function(list, alpha=0.05, c0=0.25){
+
+## Inference() is the function to conduct simultaneous inference of estimated partial correlations. The detail of this inference approach can be found in manuscripts.
+## Input:
+# list: a list returned by either `PCGII()` or `clevel()`.
+# alpha: pre-determined False Discovery Rate. Nominal FDR is set at 0.05 by default.
+## Output:
+# a list contains the dataframe of pairs with significant partial correlations.
+inference=function(list, alpha=0.05){
   Est=list$Est
   tscore=list$tscore
   kappa=list$kappa
@@ -171,11 +191,19 @@ inference=function(list, alpha=0.05, c0=0.25){
   FDPresprop = which(SRec == 1, arr.ind = TRUE) # selected edge location
   
   sigs=as.data.frame(FDPresprop[which(FDPresprop[,1]!=FDPresprop[,2]),])
-  #colnames(sigs)=c("node1","node2")
-  
+
   return(list(sigs=sigs))  
 }
 
+
+
+
+## An utility function to pre-process the input prior set. This function will ensure the input prior set corresponds to an undirected prior network. If the prior network is believed to be directed, no pre-processing of prior set is required. 
+## Input:
+# prior: the prior set, a k by 2 matrix, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. 
+## Output:
+# This function returns a pre-processed prior set, in which the connection between any pair of nodes is undirected.
+# Remark: this function is not necessary. Prior set should be considered carefully before running the network analysis. If the prior network connections are believed to be undirected while the prior set only includes one way connections for simplicity, this function will duplicate the connections and swap the direction automactically.  
 double_prior=function(prior){
   rbind.data.frame(prior, prior %>% transform(row = pmax(row, col), col = pmin(row, col))) %>% 
     arrange(row, col) %>% unique()

@@ -7,3 +7,5 @@ Reference: Victor Bernal, Rainer Bischoff, Victor Guryev, Marco Grzegorczyk, Pet
 `PCGII.R` contains the required functions for our proposed approach PCGII. 
 
 Reference: Hao Wang, Yumou Qiu, Hongqing Guo, Yanhai Yin, Peng Liu, Constructing gene networks by partial correlation graphs with information incorporation. 
+
+`Utility.R` contains some help functions.

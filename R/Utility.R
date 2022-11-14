@@ -1,9 +1,9 @@
 # Utility functions
 
 
-# This function takes PCGII inference results as input and generate a 
+# This function takes PCGII inference results as input, generates a 
 # adjacecy matrix corresponding to the significant partial correlations
-# and return a vector of all off-diagonal elements. The function does 
+# and returns a vector of all off-diagonal elements. The function does 
 # require package corpcor. 
 sigs2vec=function(sigs, P){
   require(corpcor)
@@ -12,6 +12,20 @@ sigs2vec=function(sigs, P){
     m[sigs[h,1],sigs[h,2]]=1
   }
   sm2vec(m)
+}
+
+
+# This function takes PCGII inference results as input, generates a 
+# adjacecy matrix corresponding to the significant partial correlations
+# and returns the matrix. The function does require package corpcor. 
+sigs2mat=function(sigs, P){
+  require(corpcor)
+  m=matrix(0,P,P)
+  for (h in 1: dim(sigs)[1]){
+    m[sigs[h,1],sigs[h,2]]=1
+    m[sigs[h,2],sigs[h,1]]=1
+  }
+  m
 }
 
 
