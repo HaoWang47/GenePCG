@@ -10,6 +10,7 @@ library(mvtnorm)
 
 source("./R/shrinkagefunctions.R") # https://github.com/V-Bernal/GGM-Shrinkage
 source("./R/PCGII.R")
+source("./R/Utility.R")
 ############# Simulate Data, 2022/05/12 #############;
 
 makeBlockDiag=function(blocksize=4, p=20, min.beta=0.2, max.beta=0.5){ # blocksize has to be a factor of p
