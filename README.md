@@ -88,6 +88,8 @@ Example:
 +      layout=layout_in_circle(my_net)) 
 ```
 
+The following plot is a network of 30 nodes reconstructed by PCGII. 7 connections are randomly included in the prior set, among which 1 connection does not really exist. Blue edges correspond to true positives and red edges represent false positives with nominal FDR controlled at 0.05. The thickness of the edge indicates the magnitude of estimated partial correlations. 
+
 ![Visualization Result](./figs/Example_Visualization.png)
 
 # Example

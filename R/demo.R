@@ -17,7 +17,10 @@ p=30 # number of nodes
 
 g=sample_pa(p, power=1, m=1, directed = FALSE) # undirected scale-free network with the power of the preferential attachment set as 1, the number of edges to add in each time step set as 2.
 plot(g, vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5) # visulize simulated network structure
-omega=as_adjacency_matrix(g) %>% as.matrix() # precision matrix structure corresponding to the simulated scale-free networ
+g %>%
+  plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5, layout=layout_in_circle(g))
+# compute precision matrix structure corresponding to the simulated scale-free networ
+omega=as_adjacency_matrix(g) %>% as.matrix() 
 for(h1 in 1:(p-1)){
   for(h2 in (h1+1):p){
     if(omega[h1,h2]!=0){
@@ -27,12 +30,13 @@ for(h1 in 1:(p-1)){
     }
   }
 }
-
 diag(omega)=rowSums(abs(omega)) # make sure precision matrix is positive definite
 diag(omega)=diag(omega)+0.10
 
-Sigma=solve(omega) # population covariance matrix, which is used to generate data
-X = rmvnorm(n = n, sigma = Sigma) # simulate expression data  
+# population covariance matrix, which is used to generate data
+Sigma=solve(omega) 
+# simulate expression data 
+X = rmvnorm(n = n, sigma = Sigma)  
 
 lam=2*sqrt(log(p)/n) ## fixed lambda
 
@@ -42,17 +46,43 @@ colnames(prior_set)=c("row", "col")
 PCGII_out1=PCGII(df=X, prior=as.data.frame(prior_set), lambda = lam)
 inference_out1=inference(list=PCGII_out1)
 inference_out1$sigs # a data frame of pairs of nodes with significant partial correlations  
-inference_out1$sigs %>% sigs2mat(P=p)  %>% 
-  graph_from_adjacency_matrix(mode = "undirected") %>%
-  plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5)
+net1=inference_out1$sigs %>% sigs2mat(P=p)  %>% 
+  graph_from_adjacency_matrix(mode = "undirected") 
+net1 %>%
+  plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5, layout=layout_in_circle(net1))
 
 # stronger assumptions, undirected prior network
 PCGII_out2=PCGII(df=X, prior=double_prior(prior_set), lambda = lam)
 inference_out2=inference(list=PCGII_out2)
 inference_out2$sigs # a data frame of pairs of nodes with significant partial correlations  
-inference_out2$sigs %>% sigs2mat(P=p)  %>% 
-  graph_from_adjacency_matrix(mode = "undirected") %>%
-  plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5)
+net2=inference_out2$sigs %>% sigs2mat(P=p)  %>% 
+  graph_from_adjacency_matrix(mode = "undirected") 
+net2 %>%
+  plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5, layout=layout_in_circle(net2))
+
+out=inference_out2$sigs %>% mutate(correct=2) 
+for (k in 1:nrow(out)) {
+  if(omega[out[k,1],out[k,2]]!=0) {out[k,3]=1}
+}
+# create the dataframe of edges (edge set E)
+my_link=out  %>%
+  transform(row = pmin(row, col), col = pmax(row, col)) %>% 
+  arrange(row, col) %>% 
+  unique() 
+colnames(my_link)[1:2]=c("from","to")
+# empirical FDR
+sum(my_link[,3]==0)/nrow(my_link)
+# create node set, Gamma
+my_node=cbind.data.frame(id=1:p, gene=paste0("G",1:p), types=c(rep(1,10),rep(2,10),rep(3,10)),type.label=c(rep("gene set 1",10),rep("gene set 2",10),rep("gene set 3",10))) 
+my_net <- graph_from_data_frame(d=my_link, vertices=my_node, directed=F) 
+# plot the network
+Ecolrs=c("skyblue","pink") # blue: TP; pink: FP
+Vcolrs=c("gray80", "tomato", "gold")
+V(my_net)$color <- Vcolrs[V(my_net)$types]
+E(my_net)$color <- Ecolrs[E(my_net)$correct]
+plot(my_net, edge.arrow.size=.2, vertex.frame.color="#ffffff", vertex.label=V(my_net)$gene, vertex.label.color="black",
+     layout=layout_in_circle(my_net)) 
+
 
 
 # More examples
@@ -106,9 +136,13 @@ my_net <- graph_from_data_frame(d=my_link, vertices=my_node, directed=F)
 
 Ecolrs=c("skyblue","pink")
 Vcolrs=c("gray80", "tomato", "gold")
-V(my_net)$color <- Vcolrs[V(my_net)$types]
-E(my_net)$width <- abs(E(my_net)$weight)*2
-plot(my_net, edge.arrow.size=.2, edge.color=Ecolrs[E(my_net)$type],
+V(my_net)$color=Vcolrs[V(my_net)$types]
+E(my_net)$width=abs(E(my_net)$weight)*2
+E(my_net)$color=Ecolrs[E(my_net)$type]
+plot(my_net, edge.arrow.size=.2, 
      vertex.frame.color="#ffffff",
      vertex.label=V(my_net)$gene, vertex.label.color="black",
      layout=layout_in_circle(my_net)) 
+
+
+## Comparison
