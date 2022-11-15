@@ -51,7 +51,7 @@ net1=inference_out1$sigs %>% sigs2mat(P=p)  %>%
 net1 %>%
   plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5, layout=layout_in_circle(net1))
 
-# stronger assumptions, undirected prior network
+# undirected prior network
 PCGII_out2=PCGII(df=X, prior=double_prior(prior_set), lambda = lam)
 inference_out2=inference(list=PCGII_out2)
 inference_out2$sigs # a data frame of pairs of nodes with significant partial correlations  

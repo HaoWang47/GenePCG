@@ -9,15 +9,35 @@ Gene network reconstruction by Partial Correlation Graph with Information Incorp
 > [halewang@iastate.edu] (Hao Wang)
 
 ### Citation:
-> Wang, H., Qiu, Y.\*, Guo, H., Yin, Y., Liu, P.\*, 2022+. Constructing Large Scale Gene Networks by Partial Correlation
-Graphs with Information Incorporation. To be submitted.
-
-> Qiu, Y., & Zhou, X. H. (2020). Estimating c-level partial correlation graphs with application to brain imaging. Biostatistics (Oxford, England), 21(4), 641–658. https://doi.org/10.1093/biostatistics/kxy076
+> Wang, H., Qiu, Y.\*, Guo, H., Yin, Y., Liu, P.\*, 2022+. Constructing Large Scale Gene Networks by Partial Correlation Graphs with Information Incorporation. To be submitted.
 ---
 
-This is a tutorial script for researchers who are interested in applying PCGII on omics data to learn the direct association structure of omics features. The main function `PGCII()` takes a biologically pre-processed expression data matrix as input, and returns a list of statistics (estimates and test statistics). The function `inference()` takes the list returned by `PGCII()` as input and conduct simultaneous test to identify significant partial correlations with False Discovery Rate (FDR) controlled at a pre-determined nominal level (0.05 by default). 
+This is a tutorial script for researchers who are interested in applying PCGII on omics data to learn the direct association structure of omics features. The main function `PGCII()` takes a biologically pre-processed expression data matrix as input, and returns a list of statistics (estimates and test statistics). The function `inference()` takes a list returned by `PGCII()` as input and conduct simultaneous test to identify significant partial correlations with False Discovery Rate (FDR) controlled at a pre-determined nominal level (0.05 by default). 
 
-# Package loading
+### Usage
+-------
+```PCGII()```:  
+  - Input: 
+    - `df`: the main expression dataset, an $n$ by $p$ matrix/dataframe, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+    - `prior`: the prior set, a $k$ by $2$ dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe with column names **"row"** and **"col"**.
+    - `lambda`: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of $2\timessqrt(log(p)/n)$.
+  - Remark: mathematical standardization will be automatically done within the function.
+  - Output: This function returns a list of 
+    - Estimated partial correlation matrix (Est),
+    - Sparse partial correlation estimation matrix with threshold (EstThresh),
+    - Estimated ratio of forth and squared second moment of residuals (kappa),
+    - Estimated test statistics matrix of partial correlations (tscore),
+    - Sample size (n) and number of nodes (p).
+
+```Inference()```:
+  - Input:
+    - list: a list returned by either `PCGII()` or `clevel()`.
+    - alpha: pre-determined False Discovery Rate. Nominal FDR is set at 0.05 by default.
+  - Output:
+    - a list contains the dataframe of pairs with significant partial correlations.
+
+
+# Package/functions loading
 ```r
 # R version is required >= 4.1.2
 # When the first time to use the package, please make sure all required packages are installed under your R environment
@@ -31,7 +51,7 @@ This is a tutorial script for researchers who are interested in applying PCGII o
 
 # Data Preparation
 
-To apply PCGII on omics dataset, some data pre-processing is necessary. For example, gene expression data is supposed to be normalized. Depending on the biological assumptions, treatment effects (group means) can be subtracted ahead if the covariance structures are believe to be the same across treatment groups. Mathematical standardization is not required.
+To apply PCGII on omics dataset, some data pre-processing is necessary. For example, gene expression data is supposed to be normalized. Depending on the biological assumptions, treatment effects (group means) can be subtracted ahead if the covariance structures are believe to be the same across treatment groups. Mathematical standardization is not required, which will be automatically done within the function.
 
 Example:
 
@@ -46,7 +66,10 @@ Example:
 ```
 
 
-# Example
+# Network Analysis
+
+Simulate data from a scale-free network.
+
 ```r
 > # Simulating data
 > set.seed(1234567)
@@ -71,23 +94,30 @@ Example:
 > 
 > Sigma=solve(omega) # population covariance matrix, which is used to generate data
 > X = rmvnorm(n = n, sigma = Sigma) # simulate expression data  
+```
+
+Network analysis of data matrix `X`.
+
+```
+> # determine tuning parameter: fixed lambda
+> lam=2*sqrt(log(p)/n) 
 > 
-> lam=2*sqrt(log(p)/n) ## fixed lambda
-> 
-> # directed prior network
+> # create prior set: directed prior network
 > prior_set=matrix(data=c(9,15, 3,4, 5,24, 16,20, 25,22, 28,8, 11,4), nrow=7, ncol=2, byrow = TRUE)
 > colnames(prior_set)=c("row", "col")
 > PCGII_out1=PCGII(df=X, prior=as.data.frame(prior_set), lambda = lam)
 > inference_out1=inference(list=PCGII_out1)
 > inference_out1$sigs # a data frame of pairs of nodes with significant partial correlations  
+> # Visualization
 > inference_out1$sigs %>% sigs2mat(P=p)  %>% 
 +   graph_from_adjacency_matrix(mode = "undirected") %>%
 +   plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5)
 > 
-> # stronger assumptions, undirected prior network
+> # create prior set: undirected prior network
 > PCGII_out2=PCGII(df=X, prior=double_prior(prior_set), lambda = lam)
 > inference_out2=inference(list=PCGII_out2)
 > inference_out2$sigs # a data frame of pairs of nodes with significant partial correlations
+> # Visualization
 > inference_out2$sigs %>% sigs2mat(P=p)  %>% 
 +   graph_from_adjacency_matrix(mode = "undirected") %>%
 +   plot(vertex.size=4, vertex.label.dist=0.5, vertex.color="red", edge.arrow.size=0.5)
