@@ -45,52 +45,6 @@ Example:
 > X_centered_by_group=X[,1:p]-temp # expression data centered within treatment groups, ready for network analysis
 ```
 
-# Visualization
-
-To visualize the reconstructed biological network, we apply package `igraph`.
-
-Example: 
-
-```r
-> load("./Data/simulated_data_twogroups.RData")
-> n=nrow(X)
-> p=X %>% select(-treatment) %>% ncol()
-> temp=X %>% group_by(treatment) %>% summarise_all(mean) %>% select(-treatment) %>% as.matrix()
-> temp=temp[rep(1:nrow(temp), each=n/2),]
-> X_centered_by_group=X[,1:p]-temp
-> prior_set=matrix(data=c(9,15, 3,4, 5,24, 16,20, 25,22, 28,8, 11,4), nrow=7, ncol=2, byrow = TRUE) # prior set 
-> colnames(prior_set)=c("row", "col")
-> lam=2*sqrt(log(p)/n) ## fixed lambda
-> PCGII_out=PCGII(df=X_centered_by_group, prior=double_prior(prior_set), lambda = lam)
-> set.seed(333)
-> nodenames=colnames(X[,1:p])
-> inference_out=inference(PCGII_out)$sigs %>% mutate(weight=0) 
-> # assign weights to each connected pair of nodes, weight is equal to corresponding estimated partial correlatio 
-> for (k in 1:nrow(inference_out)) {
-+   inference_out$weight[k]=PCGII_out$Est[inference_out$row[k],inference_out$col[k]]
-+ }
-> my_link=inference_out  %>%
-+   transform(row = pmin(row, col), col = pmax(row, col)) %>% 
-+   arrange(row, col) %>% 
-+   unique() %>%
-+   mutate(type=ifelse(weight<0,2,1))
-> colnames(my_link)[1:2]=c("from","to")
-> my_node=cbind.data.frame(id=1:p, gene=nodenames, types=c(rep(1,10),rep(2,10),rep(3,10)),type.label=c(rep("gene set 1",10),rep("gene set 2",10),rep("gene set 3",10)))
-> my_net <- graph_from_data_frame(d=my_link, vertices=my_node, directed=F) 
-> 
-> Ecolrs=c("skyblue","pink")
-> Vcolrs=c("gray80", "tomato", "gold")
-> V(my_net)$color <- Vcolrs[V(my_net)$types]
-> E(my_net)$width <- abs(E(my_net)$weight)*2
-> plot(my_net, edge.arrow.size=.2, edge.color=Ecolrs[E(my_net)$type],
-+      vertex.frame.color="#ffffff",
-+      vertex.label=V(my_net)$gene, vertex.label.color="black",
-+      layout=layout_in_circle(my_net)) 
-```
-
-The following plot is a network of 30 nodes reconstructed by PCGII. 7 connections are randomly included in the prior set, among which 1 connection does not really exist. Blue edges correspond to true positives and red edges represent false positives with nominal FDR controlled at 0.05. The thickness of the edge indicates the magnitude of estimated partial correlations. 
-
-![Visualization Result](./figs/Example_Visualization.png)
 
 # Example
 ```r
@@ -140,4 +94,52 @@ The following plot is a network of 30 nodes reconstructed by PCGII. 7 connection
 ```
 
 For more examples, please see R script `demo.R`.
+
+
+# Visualization
+
+To visualize a reconstructed biological network, we will continue analyzing the toy example where the simulated data is consisted of 30 genes, 50 samples from two treatment groups, and apply package `igraph` to plot the network.
+
+Example: 
+
+```r
+> load("./Data/simulated_data_twogroups.RData")
+> n=nrow(X)
+> p=X %>% select(-treatment) %>% ncol()
+> temp=X %>% group_by(treatment) %>% summarise_all(mean) %>% select(-treatment) %>% as.matrix()
+> temp=temp[rep(1:nrow(temp), each=n/2),]
+> X_centered_by_group=X[,1:p]-temp
+> prior_set=matrix(data=c(9,15, 3,4, 5,24, 16,20, 25,22, 28,8, 11,4), nrow=7, ncol=2, byrow = TRUE) # prior set 
+> colnames(prior_set)=c("row", "col")
+> lam=2*sqrt(log(p)/n) ## fixed lambda
+> PCGII_out=PCGII(df=X_centered_by_group, prior=double_prior(prior_set), lambda = lam)
+> set.seed(333)
+> nodenames=colnames(X[,1:p])
+> inference_out=inference(PCGII_out)$sigs %>% mutate(weight=0) 
+> # assign weights to each connected pair of nodes, weight is equal to corresponding estimated partial correlatio 
+> for (k in 1:nrow(inference_out)) {
++   inference_out$weight[k]=PCGII_out$Est[inference_out$row[k],inference_out$col[k]]
++ }
+> my_link=inference_out  %>%
++   transform(row = pmin(row, col), col = pmax(row, col)) %>% 
++   arrange(row, col) %>% 
++   unique() %>%
++   mutate(type=ifelse(weight<0,2,1))
+> colnames(my_link)[1:2]=c("from","to")
+> my_node=cbind.data.frame(id=1:p, gene=nodenames, types=c(rep(1,10),rep(2,10),rep(3,10)),type.label=c(rep("gene set 1",10),rep("gene set 2",10),rep("gene set 3",10)))
+> my_net <- graph_from_data_frame(d=my_link, vertices=my_node, directed=F) 
+> 
+> Ecolrs=c("skyblue","pink")
+> Vcolrs=c("gray80", "tomato", "gold")
+> V(my_net)$color <- Vcolrs[V(my_net)$types]
+> E(my_net)$width <- abs(E(my_net)$weight)*2
+> plot(my_net, edge.arrow.size=.2, edge.color=Ecolrs[E(my_net)$type],
++      vertex.frame.color="#ffffff",
++      vertex.label=V(my_net)$gene, vertex.label.color="black",
++      layout=layout_in_circle(my_net)) 
+```
+
+The following plot is a network of 30 nodes reconstructed by PCGII. 7 connections are randomly included in the prior set, among which 1 connection does not really exist. Blue edges correspond to true positives and red edges represent false positives with nominal FDR controlled at 0.05. The thickness of the edge indicates the magnitude of estimated partial correlations. 
+
+![Visualization Result](./figs/Example_Visualization.png)
 
