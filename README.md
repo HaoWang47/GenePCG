@@ -10,17 +10,17 @@ Gene network reconstruction by Partial Correlation Graph with Information Incorp
 
 ### Citation:
 > Wang, H., Qiu, Y.\*, Guo, H., Yin, Y., Liu, P.\*, 2022+. Constructing Large Scale Gene Networks by Partial Correlation Graphs with Information Incorporation. To be submitted.
----
+-----
 
 This is a tutorial script for researchers who are interested in applying PCGII on omics data to learn the direct association structure of omics features. The main function `PGCII()` takes a biologically pre-processed expression data matrix as input, and returns a list of statistics (estimates and test statistics). The function `inference()` takes a list returned by `PGCII()` as input and conduct simultaneous test to identify significant partial correlations with False Discovery Rate (FDR) controlled at a pre-determined nominal level (0.05 by default). 
 
 ### Usage
--------
+
 ```PCGII()```:  
   - Input: 
     - `df`: the main expression dataset, an $n$ by $p$ matrix/dataframe, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
     - `prior`: the prior set, a $k$ by $2$ dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe with column names **"row"** and **"col"**.
-    - `lambda`: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of $2\timessqrt(log(p)/n)$.
+    - `lambda`: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of $2\times \sqrt{log(p)/n}$.
   - Remark: mathematical standardization will be automatically done within the function.
   - Output: This function returns a list of 
     - Estimated partial correlation matrix (Est),
@@ -36,6 +36,7 @@ This is a tutorial script for researchers who are interested in applying PCGII o
   - Output:
     - a list contains the dataframe of pairs with significant partial correlations.
 
+-----
 
 # Package/functions loading
 ```r
@@ -68,7 +69,7 @@ Example:
 
 # Network Analysis
 
-Simulate data from a scale-free network.
+Simulate data $X$ from a scale-free network $g$.
 
 ```r
 > # Simulating data
