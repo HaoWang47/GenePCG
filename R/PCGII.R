@@ -45,7 +45,7 @@ PCGII=function(df, prior, lambda){
     temp.node=prior[with(prior,row==i),'col']
     
     for(nds in temp.node){
-      if (nds < i) {penalty_fac[nds]=0} else {penalty_fac[nds-1]=0.3}
+      if (nds < i) {penalty_fac[nds]=0} else {penalty_fac[nds-1]=0}
     }
     
     out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda, penalty.factor=penalty_fac)
