@@ -12,7 +12,7 @@
 ## Input: 
 #   - df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
 #   - prior: the prior set, a k by 2 dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe.
-#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of sqrt(2*log(p)/n).
 
 ## Remark: mathematical standardization will be automatically done within the function.
 
@@ -98,7 +98,7 @@ PCGII=function(df, prior, lambda){
 
 ## Input: 
 #   - df: the main expression data, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
-#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of sqrt(2*log(p)/n).
 
 ## Output: This function returns a list of 
 #   - estimated partial correlation matrix (Est), 
