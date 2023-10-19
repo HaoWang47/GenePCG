@@ -144,5 +144,3 @@ plot(my_net, edge.arrow.size=.2,
      vertex.label=V(my_net)$gene, vertex.label.color="black",
      layout=layout_in_circle(my_net)) 
 
-
-## Comparison
