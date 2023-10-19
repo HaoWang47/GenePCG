@@ -1,4 +1,4 @@
-# This folder lists all the r functions needed to run the tutorial. 
+# This folder contains all the r functions needed to run the tutorial. 
 
 ### Authors:
 > Hao Wang, Yumou Qiu and Peng Liu.
@@ -16,5 +16,5 @@ Usage
    * A sample case study
    * How to pre-process data
 
-4. ```shrinkagefunctions.R```: required functions for the approach E-TEST, for more details of this approach, see: https://github.com/V-Bernal/GGM-Shrinkage. Credit to original authors. This function is only needed to reproduce our simulation study.
+4. ```shrinkagefunctions.R```: required functions for the approach E-TEST, for more details of this approach, see: https://github.com/V-Bernal/GGM-Shrinkage. Credited to original authors. This function is only needed to reproduce our simulation study.
 

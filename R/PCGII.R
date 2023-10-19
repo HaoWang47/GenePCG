@@ -7,16 +7,24 @@
 ##########################################################################################
 
 
-
 ## PCGII() is the function to apply the proposed method to get the estimated partial correlation graph with information incorporation
+
 ## Input: 
-# df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
-# prior: the prior set, a k by 2 dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe.
-# lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
-# Remark: mathematical standardization will be automatically done within the function.
-## Output:
-# This function returns a list of estimated partial correlation matrix (Est), sparse partial correlation estimation matrix with threshold (EstThresh), estimated kappa (kappa), estimated test statistics matrix of partial correlations (tscore), sample size (n) and number of nodes (p).
+#   - df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+#   - prior: the prior set, a k by 2 dataframe, in which each row corresponds to a pair of nodes (any omics features) that are connected under prior belief. Note, prior input has to be dataframe.
+#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+
 ## Remark: mathematical standardization will be automatically done within the function.
+
+## Output: This function returns a list of 
+#  - estimated partial correlation matrix (Est), 
+#  - sparse partial correlation estimation matrix with threshold (EstThresh), 
+#  - estimated kappa (kappa), 
+#  - estimated test statistics matrix of partial correlations (tscore), 
+#  - sample size (n) and number of nodes (p).
+
+## Remark: mathematical standardization will be automatically done within the function.
+
 PCGII=function(df, prior, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -35,8 +43,9 @@ PCGII=function(df, prior, lambda){
   colnames(XS)=colnames(df)
   
   if(missing(lambda)){
-    shat=sqrt(n/(log(p)^3))
-    lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
+    # shat=sqrt(n/(log(p)^3))
+    # lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
+    lambda = sqrt(2*log(p/sqrt(n))/n)
   }
   
   default_penalty=rep(1,p-1)
@@ -45,7 +54,7 @@ PCGII=function(df, prior, lambda){
     temp.node=prior[with(prior,row==i),'col']
     
     for(nds in temp.node){
-      if (nds < i) {penalty_fac[nds]=0} else {penalty_fac[nds-1]=0.3}
+      if (nds < i) {penalty_fac[nds]=0} else {penalty_fac[nds-1]=0}
     }
     
     out = glmnet(XS[, -i], X[, i], family = "gaussian", lambda = lambda, penalty.factor=penalty_fac)
@@ -85,13 +94,21 @@ PCGII=function(df, prior, lambda){
 }
 
 
-## clevel() is the function to apply the method originally proposed in paper '> Qiu, Y., & Zhou, X. H. (2020). Estimating c-level partial correlation graphs with application to brain imaging. Biostatistics (Oxford, England), 21(4), 641–658. https://doi.org/10.1093/biostatistics/kxy076', code credit to Dr. Yumou Qiu.
+## clevel() is the function to apply the method originally proposed in paper '> Qiu, Y., & Zhou, X. H. (2020). Estimating c-level partial correlation graphs with application to brain imaging. Biostatistics (Oxford, England), 21(4), 641–658. https://doi.org/10.1093/biostatistics/kxy076', code credited to Dr. Yumou Qiu.
+
 ## Input: 
-# df: the main expression dataset, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
-# lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
-## Output:
-# This function returns a list of estimated partial correlation matrix (Est), sparse partial correlation estimation matrix with threshold (EstThresh), estimated kappa (kappa), estimated test statistics matrix of partial correlations (tscore), sample size (n) and number of nodes (p).
+#   - df: the main expression data, an n by p matrix, in which each row corresponds to a sample and each column represents expression/abundance of an omics feature.
+#   - lambda: the regularization parameter, used in the node-wise regression. If missing, default lambda will be used which is at the order of 2*sqrt(log(p)/n).
+
+## Output: This function returns a list of 
+#   - estimated partial correlation matrix (Est), 
+#   - sparse partial correlation estimation matrix with threshold (EstThresh), e
+#   - stimated kappa (kappa), 
+#   - estimated test statistics matrix of partial correlations (tscore), 
+#   - sample size (n) and number of nodes (p).
+
 ## Remark: mathematical standardization will be automatically done within the function.
+## 
 clevel=function(df, lambda){
   n = dim(df)[1]; p = dim(df)[2]
   t0=2
@@ -110,8 +127,9 @@ clevel=function(df, lambda){
   colnames(XS)=colnames(df)
   
   if(missing(lambda)){
-    shat=sqrt(n/(log(p)^3))
-    lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
+    # shat=sqrt(n/(log(p)^3))
+    # lambda=sqrt(2*(2+0.01)*log(p/shat)/n)    
+    lambda = sqrt(2*log(p/sqrt(n))/n)
   }
   
   for (i in 1 : p){
@@ -151,12 +169,15 @@ clevel=function(df, lambda){
 }
 
 
-## Inference() is the function to conduct simultaneous inference of estimated partial correlations. The detail of this inference approach can be found in the manuscript or in 'Qiu, Y., & Zhou, X. H. (2020). Estimating c-level partial correlation graphs with application to brain imaging. Biostatistics (Oxford, England), 21(4), 641–658. https://doi.org/10.1093/biostatistics/kxy076'. Code credit to Dr. Yumou Qiu
+## Inference() is the function to conduct simultaneous inference of estimated partial correlations. The detail of this inference approach can be found in the manuscript or in 'Qiu, Y., & Zhou, X. H. (2020). Estimating c-level partial correlation graphs with application to brain imaging. Biostatistics (Oxford, England), 21(4), 641–658. https://doi.org/10.1093/biostatistics/kxy076'. Code credited to Dr. Yumou Qiu
+
 ## Input:
-# list: a list returned by either `PCGII()` or `clevel()`.
-# alpha: pre-determined False Discovery Rate. Nominal FDR is set at 0.05 by default.
+#   - list: a list returned by either `PCGII()` or `clevel()`.
+#   - alpha: pre-determined False Discovery Rate. Nominal FDR is set at 0.05 by default.
+
 ## Output:
 # a list contains the dataframe of pairs with significant partial correlations.
+
 inference=function(list, alpha=0.05){
   Est=list$Est
   tscore=list$tscore
